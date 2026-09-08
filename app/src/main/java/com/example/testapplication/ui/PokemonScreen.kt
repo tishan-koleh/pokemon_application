@@ -15,6 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,6 +70,14 @@ fun PokemonScreen(vm: PokemonFeedVm) {
 fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
 
     val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+
+    val shouldLoadMoreInGrid = remember {
+        derivedStateOf {
+            val lastItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf false
+            lastItem.index >= (gridState.layoutInfo.totalItemsCount - 10)
+        }
+    }
 
     val shouldLoaMore = remember {
         derivedStateOf {
@@ -73,8 +86,8 @@ fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
         }
     }
 
-    LaunchedEffect(shouldLoaMore.value) {
-        snapshotFlow { shouldLoaMore }
+    LaunchedEffect(shouldLoaMore.value, shouldLoadMoreInGrid.value) {
+        snapshotFlow { shouldLoadMoreInGrid }
             .distinctUntilChanged()
             .filter { it.value }
             .collect { loadMore() }
@@ -83,7 +96,41 @@ fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
     Box(
         modifier = Modifier.fillMaxSize()
     ){
-        LazyColumn(
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            state = gridState,
+            contentPadding = PaddingValues(5.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6 .dp),
+        ) {
+            items(state.pokemons, key = { it.name }) { pokemon ->
+                ItemRow(pokemon.imageUrl, pokemon.name, pokemon.id)
+            }
+
+            item(span = { GridItemSpan(maxCurrentLineSpan)}) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ){
+                    when(state.appendState){
+                        AppendUiState.Empty, AppendUiState.EndReached -> {
+                            Text(
+                                text = "You are all caught up",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        is AppendUiState.Error -> { RetryButton(loadMore) }
+                        AppendUiState.Loading -> { Loading() }
+                        AppendUiState.DeviceOffline -> { DeviceOffline (loadMore) }
+                        else -> {}
+                    }
+                }
+            }
+        }
+
+        /*LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(10.dp)
@@ -111,7 +158,7 @@ fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
                     }
                 }
             }
-        }
+        }*/
     }
 }
 
@@ -140,13 +187,13 @@ fun ItemRow(imageUrl: String, name: String, id: Int){
             .padding(horizontal = 8.dp, vertical = 10.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color.LightGray)
-            .padding(16.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SubcomposeAsyncImage(
             model = imageUrl,
             modifier = Modifier
-                .size(48.dp)
+                .size(30.dp)
                 .clip(RoundedCornerShape(8.dp)),
             contentDescription = null,
             loading = {
@@ -154,7 +201,7 @@ fun ItemRow(imageUrl: String, name: String, id: Int){
             }
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
         Text(
             style = MaterialTheme.typography.bodyMedium,
@@ -165,7 +212,7 @@ fun ItemRow(imageUrl: String, name: String, id: Int){
 
         Text(
             style = MaterialTheme.typography.bodySmall,
-            text = " ${id}: ${counter}s"
+            text = "${counter}s"
         )
 
     }
