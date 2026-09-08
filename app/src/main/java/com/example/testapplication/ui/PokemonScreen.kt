@@ -89,7 +89,7 @@ fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
             contentPadding = PaddingValues(10.dp)
         ) {
             items(state.pokemons, key = { it.name }) { pokemon ->
-                ItemRow(pokemon.imageUrl, pokemon.name)
+                ItemRow(pokemon.imageUrl, pokemon.name, pokemon.id)
             }
 
             item {
@@ -123,7 +123,7 @@ fun RetryButton(onRetry: () -> Unit){
 }
 
 @Composable
-fun ItemRow(imageUrl: String, name: String){
+fun ItemRow(imageUrl: String, name: String, id: Int){
 
     var counter by rememberSaveable { mutableIntStateOf(0) }
 
@@ -165,7 +165,7 @@ fun ItemRow(imageUrl: String, name: String){
 
         Text(
             style = MaterialTheme.typography.bodySmall,
-            text = "${counter}s"
+            text = " ${id}: ${counter}s"
         )
 
     }

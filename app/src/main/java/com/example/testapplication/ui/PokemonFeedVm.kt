@@ -102,11 +102,10 @@ class PokemonFeedVm @Inject constructor(
             }
 
             try {
-                val cursor = nextCursor + currentLimit
                 val request = GetPokemonRequest(
                     limit = currentLimit,
-                    offset = cursor,
-                    isDeviceOnline = networkManager.isOnline(),
+                    offset = nextCursor,
+                    isDeviceOnline = true,
                     isInitialFeed = false
                 )
                 val response = useCase.getPokemon(request, viewModelScope)
