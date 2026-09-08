@@ -1,11 +1,10 @@
 package com.example.testapplication.domain.repository
 
-import android.content.SharedPreferences
 import com.example.testapplication.data.remote.api.GetPokemonRequest
-import com.example.testapplication.data.remote.dto.PokemonResponse
-import com.example.testapplication.domain.Pokemon
-import com.google.gson.Gson
+import com.example.testapplication.domain.PokemonDomainResponse
 
 interface PokemonRepository {
-    suspend fun getPokemonFromNetwork(request: GetPokemonRequest): PokemonResponse
+    suspend fun getPokemonFromNetwork(request: GetPokemonRequest): PokemonDomainResponse?
+    suspend fun getPokemonFromFromDb(): PokemonDomainResponse?
+    suspend fun savePokemonsToDb(response: PokemonDomainResponse)
 }
