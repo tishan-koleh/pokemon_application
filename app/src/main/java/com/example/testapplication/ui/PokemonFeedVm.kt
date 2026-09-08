@@ -3,6 +3,7 @@ package com.example.testapplication.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.testapplication.NetworkManager
 import com.example.testapplication.data.remote.api.GetPokemonRequest
 import com.example.testapplication.domain.usecase.GetPokemonUseCase
 import com.example.testapplication.ui.model.AppendUiState
@@ -14,11 +15,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 
 @HiltViewModel
 class PokemonFeedVm @Inject constructor(
-    private val useCase: GetPokemonUseCase
+    private val useCase: GetPokemonUseCase,
+    private val networkManager: NetworkManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
@@ -43,15 +44,20 @@ class PokemonFeedVm @Inject constructor(
             try {
                 val limit = 20
                 val cursor = 0
-                val request = GetPokemonRequest(limit, cursor)
-                val response = useCase.getPokemon(request)
+                val request = GetPokemonRequest(
+                    limit = limit,
+                    offset = cursor,
+                    isDeviceOnline = networkManager.isOnline(),
+                    isInitialFeed = true
+                )
+                val response = useCase.getPokemon(request, viewModelScope)
 
                 if (response.pokemons.isNotEmpty()) {
                     val feedState = FeedUiState.Content(
                         pokemons = response.pokemons,
                         cursor = response.nextCursor,
                         limit = limit,
-                        appendState = if (response.nextCursor == null) AppendUiState.EndReached else AppendUiState.Idle
+                        appendState = if(networkManager.isOnline().not()) AppendUiState.DeviceOffline else if (response.nextCursor == null) AppendUiState.EndReached else AppendUiState.Idle
                     )
                     _uiState.value = feedState
                 } else {
@@ -77,6 +83,14 @@ class PokemonFeedVm @Inject constructor(
 
             if (isLoading || currentState.appendState == AppendUiState.EndReached || currentState.appendState == AppendUiState.Loading || nextCursor == null) {
                 return@launch
+            } else if (networkManager.isOnline().not()){
+                _uiState.value = FeedUiState.Content(
+                    pokemons = currentList,
+                    cursor = nextCursor,
+                    limit = currentLimit,
+                    appendState = AppendUiState.DeviceOffline
+                )
+                return@launch
             } else {
                 _uiState.value = FeedUiState.Content(
                     pokemons = currentList,
@@ -87,12 +101,15 @@ class PokemonFeedVm @Inject constructor(
                 isLoading = true
             }
 
-            delay(10000)
-
             try {
                 val cursor = nextCursor + currentLimit
-                val request = GetPokemonRequest(currentLimit, cursor)
-                val response = useCase.getPokemon(request)
+                val request = GetPokemonRequest(
+                    limit = currentLimit,
+                    offset = cursor,
+                    isDeviceOnline = networkManager.isOnline(),
+                    isInitialFeed = false
+                )
+                val response = useCase.getPokemon(request, viewModelScope)
 
                 if (response.pokemons.isNotEmpty()) {
                     val feedState = FeedUiState.Content(

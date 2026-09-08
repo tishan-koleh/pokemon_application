@@ -6,4 +6,6 @@ sealed class AppendUiState {
     data class Error(val error: Throwable): AppendUiState()
     object Empty: AppendUiState()
     object EndReached: AppendUiState()
+
+    object DeviceOffline: AppendUiState()
 }

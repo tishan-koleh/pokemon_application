@@ -106,7 +106,8 @@ fun Content(state: FeedUiState.Content, loadMore: () -> Unit){
                         }
                         is AppendUiState.Error -> { RetryButton(loadMore) }
                         AppendUiState.Loading -> { Loading() }
-                        AppendUiState.Idle -> {}
+                        AppendUiState.DeviceOffline -> { DeviceOffline (loadMore) }
+                        else -> {}
                     }
                 }
             }
@@ -163,7 +164,7 @@ fun ItemRow(imageUrl: String, name: String){
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             text = "${counter}s"
         )
 
@@ -181,6 +182,26 @@ fun ErrorScreen(message: String, onRetry: () -> Unit){
             Text(
                 modifier = Modifier.wrapContentSize(),
                 text = message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(Modifier.size(12.dp))
+
+            RetryButton(onRetry)
+        }
+    }
+}
+
+@Composable
+fun DeviceOffline(onRetry: () -> Unit){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        Column(modifier = Modifier.wrapContentSize(), verticalArrangement = Arrangement.SpaceBetween, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                modifier = Modifier.wrapContentSize(),
+                text = "Your device is offline",
                 style = MaterialTheme.typography.bodyMedium
             )
 
