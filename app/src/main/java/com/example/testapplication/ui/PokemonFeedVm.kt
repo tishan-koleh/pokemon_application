@@ -9,11 +9,11 @@ import com.example.testapplication.domain.usecase.GetPokemonUseCase
 import com.example.testapplication.ui.model.AppendUiState
 import com.example.testapplication.ui.model.FeedUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class PokemonFeedVm @Inject constructor(
